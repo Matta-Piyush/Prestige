@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: hwb(64 67% 27% / 0.689);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: hwb(336 93% 5% / 0.689);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #d426669f;
+            color: rgb(0, 0, 0);
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <form method="POST" action="/search">
+            <input type="text" name="brand_name" placeholder="Enter Brand Name" required>
+            <button type="submit">Search</button>
+        </form>
+        <button id="uploadFiles" class="btn">Upload Files to S3</button>
+        {% if products %}
+        <h2>Results for "{{ brand_name }}"</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Product</th>
+                    <th>Case Size</th>
+                    <th>Opening Stock</th>
+                    <th>Sale Out</th>
+                    <th>Purchase</th>
+                    <th>Closing Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product['Code'] }}</td>
+                    <td>{{ product['Product'] }}</td>
+                    <td>{{ product['Case Size'] }}</td>
+                    <td>{{ product['Opening Stock'] }}</td>
+                    <td>{{ product['Sale Out'] }}</td>
+                    <td>{{ product['Purchase'] }}</td>
+                    <td>{{ product['Closing Stock'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% elif brand_name %}
+        <p>No results found for "{{ brand_name }}"</p>
+        {% endif %}
+    </div>
+    <script>
+        document.getElementById("uploadFiles").addEventListener("click", function () {
+            const confirmUpload = confirm("Are you sure you want to upload the current month's files to S3?");
+            if (!confirmUpload) return;
+
+            fetch("/upload-files", {
+                method: "POST",
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.message) {
+                        alert(data.message);
+                    } else if (data.error) {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    alert("Failed to upload files. Please try again.");
+                });
+        });
+    </script>
+</body>
+</html>

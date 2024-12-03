@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .form-container {
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Transaction Form</h1>
+
+        <!-- Success Message -->
+        {% if success %}
+        <div class="success-message">
+            <span class="checkmark">&#10003;</span> Successfully submitted!
+        </div>
+        {% endif %}
+
+        {% if stock_insufficient %}
+        <div class="stock_insufficient">
+            <p>Insufficient Stock!!!</p>
+            <p>Couldn't submit the form</p>
+        </div>
+        {% endif %}
+
+        <form action="/user_dashboard" method="POST" class="form-card">
+            <!-- Brand -->
+            <label for="brand">Brand:</label>
+            <input type="text" id="brand" name="brand" value="{{ brand }}" placeholder="Enter the brand name..." required>
+
+            <!-- Product Name Dropdown -->
+            {% if not product_name %}
+            <label for="product_name">Product Name:</label>
+            <select id="product_name" name="product_name" required>
+            <option value="">Select a product</option>
+            </select>
+            {% endif %}
+
+            <!-- Transaction Type -->
+            {% if not transaction_type %}
+            <!-- First submission - select type -->
+            <label for="transaction_type">Transaction Type:</label>
+            <div class="radio-group">
+                <input type="radio" id="sold" name="transaction_type_choice" value="sold" required>
+                <label for="sold" class="radio-label">Sold</label>
+
+                <input type="radio" id="purchased" name="transaction_type_choice" value="purchased" required>
+                <label for="purchased" class="radio-label">Purchased</label>
+            </div>
+            <button type="submit" class="btn">Next</button>
+            {% else %}
+            <!-- Second submission - fill the rest of the form -->
+            <input type="hidden" name="transaction_type" value="{{ transaction_type }}">
+            <input type="hidden" name="product_name" value="{{ product_name }}">
+<!-- 
+            <p class="transaction-type-label">Transaction Type: {{ transaction_typee }}</p> -->
+
+
+            <!-- Units -->
+            <label for="units">Units:</label>
+            <input type="number" id="units" name="units" value="{{ units }}" min="1" placeholder="Enter number of units..." required>
+
+            <!-- Purchaser (only if sold) -->
+            {% if transaction_type == 'sold' %}
+            <label for="purchaser">Purchaser:</label>
+            <input type="text" id="purchaser" name="purchaser" value="{{ purchaser }}" placeholder="Enter purchaser name..." required>
+            {% endif %}
+
+            <label for="remarks">Remarks:</label>
+            <input type="text" id="remarks" name="remarks" value="{{ remarks }}" placeholder="Enter remarks here...">
+
+            <!-- Date -->
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" value="{{ date }}" required>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn">Submit</button>
+            {% endif %}
+        </form>
+    </div>
+
+    <script>
+        const brandInput = document.getElementById('brand');
+        const productDropdown = document.getElementById('product_name');
+
+        // Event listener for brand input changes
+        brandInput.addEventListener('input', async () => {
+            const brandQuery = brandInput.value.trim();
+
+            if (brandQuery.length === 0) {
+                productDropdown.innerHTML = '<option value="">Select a product</option>';
+                return;
+            }
+
+            try {
+                // Fetch the list of products for the selected brand
+                const response = await fetch(`/get_products?brand=${encodeURIComponent(brandQuery)}`);
+                const products = await response.json();
+
+                // Clear the dropdown and populate new options
+                productDropdown.innerHTML = '<option value="">Select a product</option>';
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product;
+                    option.textContent = product;
+                    productDropdown.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        });
+    </script>
+</body>
+</html>
