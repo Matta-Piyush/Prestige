@@ -4,8 +4,23 @@ import pandas as pd
 import boto3
 from datetime import datetime,timedelta
 import os
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("flask_app.log"),
+        logging.StreamHandler()
+    ]
+)
+
+@app.route('/error')
+def error():
+    logging.error("An error occurred!")
+    return "Error route!", 500
+
 
 # @app.route('/', methods=['GET', 'POST'])
 # def login_form():
@@ -44,13 +59,13 @@ def transaction_form():
 
 def add_data(brand,product_name,transaction_type,units,purchaser,date,remarks):
     curr_month = datetime.now().strftime("%B_%Y")
-    workbook=openpyxl.load_workbook(f'artifacts\\data\\stock_data\\{curr_month}.xlsx')
+    workbook=openpyxl.load_workbook(f'artifacts/data/stock_data/{curr_month}.xlsx')
     sheet=workbook.active
 
     header=1
     headers={cell.value:cell.column for cell in sheet[header]}
 
-    new_workbook=openpyxl.load_workbook(f'artifacts\\data\\transaction_log\\{curr_month}.xlsx')
+    new_workbook=openpyxl.load_workbook(f'artifacts/data/transaction_log/{curr_month}.xlsx')
     new_sheet=new_workbook[brand]
 
     if transaction_type=='sold':
@@ -78,8 +93,8 @@ def add_data(brand,product_name,transaction_type,units,purchaser,date,remarks):
 
     
 
-    workbook.save(f'artifacts\\data\\stock_data\\{curr_month}.xlsx')
-    new_workbook.save(f'artifacts\\data\\transaction_log\\{curr_month}.xlsx')
+    workbook.save(f'artifacts/data/stock_data/{curr_month}.xlsx')
+    new_workbook.save(f'artifacts/data/transaction_log/{curr_month}.xlsx')
 
     return False
 
@@ -92,7 +107,7 @@ def search():
     brand_name = request.form.get('brand_name').lower()
     curr_month = datetime.now().strftime("%B_%Y")
     # Load the Excel file and filter by brand name
-    df=pd.read_excel(f'artifacts\data\stock_data\{curr_month}.xlsx')
+    df=pd.read_excel(f'artifacts/data/stock_data/{curr_month}.xlsx')
     filtered_data = df[df['Brand'].str.contains(brand_name, case=False, na=False)]
 
     # Convert the filtered data to a list of dictionaries
@@ -110,7 +125,7 @@ def get_products():
 
     # Load data from the Excel file
     curr_month = datetime.now().strftime("%B_%Y")    
-    df=pd.read_excel(f'artifacts\data\stock_data\{curr_month}.xlsx')
+    df=pd.read_excel(f'artifacts/data/stock_data/{curr_month}.xlsx')
 
     # Adjust the file path if needed
 
@@ -199,4 +214,4 @@ def upload_files():
 
 
 if __name__=="__main__":
-    app.run(host="0.0.0.0",port=8080)  
+    app.run(host="0.0.0.0",port=8080,debug=True)  
