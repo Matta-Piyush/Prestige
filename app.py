@@ -7,26 +7,44 @@ import os
 import logging
 
 app = Flask(__name__)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("flask_app.log"),
-        logging.StreamHandler()
-    ]
-)
+# logging.basicConfig(
+#     level=logging.DEBUG,
+#     format="%(asctime)s - %(levelname)s - %(message)s",
+#     handlers=[
+#         logging.FileHandler("flask_app.log"),
+#         logging.StreamHandler()
+#     ]
+# )
 
-@app.route('/error')
-def error():
-    logging.error("An error occurred!")
-    return "Error route!", 500
+users={'mohit':'admin','user':'user'}
 
 
-# @app.route('/', methods=['GET', 'POST'])
-# def login_form():
-#     return render_template('index.html')
 
-@app.route('/user_dashboard', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Validate user credentials
+        if username in users and os.environ.get(username)==password:
+            role = users[username]
+            if role == 'admin':
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('transaction_form'))
+        else:
+            return "Invalid credentials! Please try again."
+    
+    return render_template('index.html')
+
+# @app.route('/error')
+# def error():
+#     logging.error("An error occurred!")
+#     return "Error route!", 500
+
+
+@app.route('/user_dashboard', methods=['GET','POST'])
 def transaction_form():
     success = False
     stock_insufficient=False
@@ -98,7 +116,7 @@ def add_data(brand,product_name,transaction_type,units,purchaser,date,remarks):
 
     return False
 
-@app.route('/')
+@app.route('/admin_dashboard')
 def index():
     return render_template('admin_dashboard.html', products=None, brand_name=None)
 
@@ -150,19 +168,16 @@ s3_client = boto3.client(
 )
 
 def upload_to_s3( file_path,bucket_name,s3_file_path):
-    try:
-        s3_client.upload_file(file_path,bucket_name,s3_file_path)
-        return True
-    except Exception as e:
-        print(f"Error uploading to S3: {e}")
-        return False
+    s3_client.upload_file(file_path,bucket_name,s3_file_path)
+    
+    
     
 def create_transaction_log():
     curr_month=datetime.now().strftime("%B_%Y")
     file_path=os.path.join(f'./artifacts/data/transaction_log/{curr_month}.xlsx')
 
     columns=['Code', 'Product', 'Sold', 'Purchased', 'Consumer', 'Date', 'Remarks']
-    brand_names=['hind','zume','earthco','glass','2d','kuber','bio','gcdc']
+    brand_names=['hind','straw','glass','spoon','bionomic','chuk','earthco','wonder','2d','kuber','gcdc']
     df=pd.DataFrame(columns=columns)
 
     with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
@@ -174,6 +189,9 @@ def create_transaction_log():
         df.to_excel(writer, sheet_name=brand_names[5], index=False)
         df.to_excel(writer, sheet_name=brand_names[6], index=False)
         df.to_excel(writer, sheet_name=brand_names[7], index=False)
+        df.to_excel(writer, sheet_name=brand_names[8], index=False)
+        df.to_excel(writer, sheet_name=brand_names[9], index=False)
+        df.to_excel(writer, sheet_name=brand_names[10], index=False)
 
 @app.route("/upload-files", methods=["POST"])
 def upload_files():
